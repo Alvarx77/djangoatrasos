@@ -1,0 +1,41 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}➕ Agregar Alumno{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-success mb-4">➕ Agregar Nuevo Alumno</h2>
+
+  <form method="post" class="card shadow p-4">
+    {% csrf_token %}
+
+    <!-- Campo nombre_completo con ayuda visual -->
+    <div class="mb-3">
+      <label for="id_nombre_completo" class="form-label">Nombre completo:</label>
+      <input type="text" name="nombre_completo" maxlength="100" required
+             class="form-control text-uppercase"
+             id="id_nombre_completo"
+             placeholder="Ej: PÉREZ GONZÁLEZ JUAN CARLOS (Apellido Paterno, Materno y Nombres)">
+      <small class="form-text text-muted">
+        Escribe el apellido paterno, luego el materno y después los nombres. Todo en mayúsculas.
+      </small>
+    </div>
+
+    <!-- Renderizar el resto del formulario sin nombre_completo -->
+    {% for field in form %}
+      {% if field.name != 'nombre_completo' %}
+        <div class="mb-3">
+          {{ field.label_tag }} {{ field }}
+          {% if field.help_text %}
+            <div class="form-text">{{ field.help_text }}</div>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endfor %}
+
+    <div class="d-flex justify-content-between mt-4">
+      <a href="{% url 'lista_alumnos' %}" class="btn btn-secondary">⬅️ Volver a la Lista</a>
+      <button type="submit" class="btn btn-success">✅ Guardar Alumno</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,108 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}Estadísticas{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+  <h2 class="text-center text-primary mb-4">📊 Estadísticas de Atrasos</h2>
+
+  <div class="text-end mb-3">
+    <a href="{% url 'dashboard_admin' %}" class="btn btn-secondary">⬅️ Volver al Panel</a>
+  </div>
+
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-10 col-lg-8 mb-5">
+      <h4 class="text-center">Atrasos por Curso</h4>
+      <canvas id="barChart" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 400px;"></canvas>
+    </div>
+
+    <div class="col-12 col-md-10 col-lg-8 mb-5">
+      <h4 class="text-center">Atrasos por Día del Mes</h4>
+      <canvas id="lineChart" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 400px;"></canvas>
+    </div>
+
+    <div class="col-12 col-md-8 col-lg-6 mb-5">
+      <h4 class="text-center">% Alumnos con 3+ Atrasos</h4>
+      <canvas id="pieChart" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 350px;"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+new Chart(document.getElementById('barChart'), {
+    type: 'bar',
+    data: {
+        labels: {{ curso_labels|safe }},
+        datasets: [{
+            label: 'Atrasos por Curso',
+            data: {{ curso_values|safe }},
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderRadius: 5
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                },
+                suggestedMax: 10  // ← Esto mejora la escala
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById('lineChart'), {
+    type: 'line',
+    data: {
+        labels: {{ dias_labels|safe }},
+        datasets: [{
+            label: 'Atrasos por Día del Mes',
+            data: {{ dias_values|safe }},
+            borderColor: 'rgba(75, 192, 192, 1)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.3,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'top' }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    stepSize: 1
+                },
+                suggestedMax: 10
+            }
+        }
+    }
+});
+
+new Chart(document.getElementById('pieChart'), {
+    type: 'pie',
+    data: {
+        labels: ['Con 3+ Atrasos', 'Otros'],
+        datasets: [{
+            data: {{ pie_values|safe }},
+            backgroundColor: ['#ff6384', '#36a2eb']
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: {
+            legend: { position: 'bottom' }
+        }
+    }
+});
+</script>
+{% endblock %}

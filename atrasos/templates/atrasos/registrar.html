@@ -1,0 +1,98 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}Registrar Nuevo Atraso{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5 p-4 shadow rounded bg-white">
+  <h2 class="mb-4 text-primary text-center">Registrar Nuevo Atraso</h2>
+
+  <!-- Mensajes de error -->
+  {% if errores %}
+    <div class="alert alert-warning">
+      <ul class="mb-0">
+        {% for error in errores %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <!-- Formulario de registro -->
+  <form method="post" class="needs-validation" novalidate>
+    {% csrf_token %}
+
+    <div class="row mb-3">
+      <div class="col-md-6">
+        <label for="curso" class="form-label">Curso:</label>
+        <select id="curso" name="curso" class="form-select" required>
+          <option value="" disabled selected>Seleccionar curso</option>
+          {% for curso in cursos %}
+            <option value="{{ curso.id }}">{{ curso.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-6">
+        <label for="alumno" class="form-label">Nombre del Alumno:</label>
+        <select name="alumno" id="alumno" class="form-select" required>
+          <option value="" disabled selected>Seleccionar alumno</option>
+          {% for alumno in alumnos %}
+            <option value="{{ alumno.id }}" data-curso="{{ alumno.curso.id }}">{{ alumno.nombre_completo }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <!-- Hora actual por defecto -->
+    <div class="mb-3">
+      <label for="hora_llegada" class="form-label">Hora de llegada:</label>
+      <input type="time" name="hora_llegada" id="hora_llegada" class="form-control" value="{{ hora_actual }}" required>
+    </div>
+
+    <div class="form-check mb-3">
+      <input class="form-check-input" type="checkbox" id="usar_tolerancia" name="usar_tolerancia"
+             onchange="document.getElementById('minutos_tolerancia_div').style.display = this.checked ? 'block' : 'none';">
+      <label class="form-check-label" for="usar_tolerancia">Permitir minutos de tolerancia</label>
+    </div>
+
+    <div id="minutos_tolerancia_div" style="display: none;" class="mb-3">
+      <label for="minutos_tolerancia" class="form-label">Minutos de tolerancia permitidos (ej: 10):</label>
+      <input type="number" name="minutos_tolerancia" id="minutos_tolerancia" min="1" max="60" class="form-control">
+    </div>
+
+    <div class="mb-3">
+      <label for="estado" class="form-label">Estado:</label>
+      <select name="estado" id="estado" class="form-select" required>
+        <option value="pendiente">Pendiente</option>
+        <option value="justificado">Justificado</option>
+        <option value="no_justificado">No Justificado</option>
+      </select>
+    </div>
+
+    <div class="mb-4">
+      <label for="comentario" class="form-label">Comentario:</label>
+      <textarea name="comentario" id="comentario" rows="4" class="form-control" placeholder="Observaciones adicionales..."></textarea>
+    </div>
+
+    <!-- Botones -->
+    <div class="text-center d-grid gap-2 d-md-flex justify-content-md-center">
+      <button type="submit" class="btn btn-success btn-lg">💾 Guardar Atraso</button>
+      <a href="{% url 'listar_atrasos' %}" class="btn btn-outline-primary btn-lg">📄 Ver Lista de Atrasos</a>
+    </div>
+  </form>
+</div>
+
+<!-- Script para filtrar alumnos -->
+<script>
+  const cursoSelect = document.getElementById('curso');
+  const alumnoSelect = document.getElementById('alumno');
+
+  cursoSelect.addEventListener('change', function () {
+    const cursoId = this.value;
+    Array.from(alumnoSelect.options).forEach(option => {
+      const pertenece = option.dataset.curso === cursoId;
+      option.style.display = pertenece || option.value === "" ? 'block' : 'none';
+    });
+    alumnoSelect.value = "";
+  });
+</script>
+{% endblock %}

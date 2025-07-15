@@ -1,0 +1,40 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}⚙️ Más Opciones{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+
+  <!-- Título principal -->
+  <h2 class="text-primary mb-4 text-center">⚙️ Opciones de Administración Avanzadas</h2>
+
+  <!-- Sección de botones en formato de grilla -->
+  <div class="d-grid gap-4 col-10 col-md-6 mx-auto">
+
+    <!-- Botón: Lista de Alumnos -->
+    <a href="{% url 'lista_alumnos' %}" class="btn btn-outline-primary btn-lg">
+      🧑‍🏫 Lista de Alumnos (Ver / Editar / Eliminar)
+    </a>
+
+    <!-- Botón: Iniciar o Restaurar Año Escolar -->
+    <a href="{% url 'iniciar_nuevo_anio' %}" class="btn btn-outline-warning btn-lg">
+      🗓️ Iniciar / Restaurar Año Escolar
+    </a>
+
+    <!-- Botón: Eliminar toda la base de datos -->
+    <form action="{% url 'eliminar_base' %}" method="post" 
+          onsubmit="return confirm('⚠️ Esta acción eliminará todos los alumnos y atrasos. ¿Estás seguro que deseas continuar?');">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger btn-lg w-100">
+        🧨 Eliminar Toda la Base de Datos
+      </button>
+    </form>
+
+    <!-- Botón: Volver al Dashboard Principal -->
+    <a href="{% url 'dashboard_admin' %}" class="btn btn-outline-secondary btn-lg">
+      ⬅️ Volver al Panel Principal
+    </a>
+
+  </div>
+
+</div>
+{% endblock %}

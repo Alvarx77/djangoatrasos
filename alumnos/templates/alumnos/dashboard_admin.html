@@ -1,0 +1,136 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}Panel Administrador{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <h2 class="text-primary mb-4">👩‍💼 Panel de Administración</h2>
+
+  <!-- Botones -->
+  <div class="d-flex flex-wrap gap-2 mb-4">
+    <a href="{% url 'cargar_excel' %}" class="btn btn-outline-primary">📤 Cargar Alumnos desde Excel</a>
+    <a href="{% url 'exportar_excel' %}" class="btn btn-outline-success">📥 Descargar Excel</a>
+    <a href="{% url 'ver_estadisticas' %}" class="btn btn-outline-info">📊 Ver Estadísticas</a>
+    <a href="{% url 'opciones_admin' %}" class="btn btn-outline-warning">⚙️ Más Opciones</a>
+
+
+  </div>
+
+  <!-- Filtros -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <label for="curso" class="form-label">Filtrar por curso:</label>
+      <select name="curso" id="curso" class="form-select">
+        <option value="">-- Todos --</option>
+        {% for curso in cursos_disponibles %}
+          <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == request.GET.curso %}selected{% endif %}>{{ curso.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label for="alumno" class="form-label">Filtrar por alumno:</label>
+      <select name="alumno" id="alumno" class="form-select">
+        <option value="">-- Todos --</option>
+        {% for alumno in alumnos_disponibles %}
+          <option value="{{ alumno.id }}" {% if alumno.id|stringformat:"s" == request.GET.alumno %}selected{% endif %}>{{ alumno.nombre_completo }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label for="fecha" class="form-label">Filtrar por fecha:</label>
+      <input type="date" name="fecha" id="fecha" class="form-control" value="{{ fecha_seleccionada }}">
+    </div>
+
+    <div class="col-md-12 d-flex justify-content-between">
+      <button type="submit" class="btn btn-primary">🔍 Aplicar Filtros</button>
+      <a href="{% url 'dashboard_admin' %}" class="btn btn-secondary">🧹 Limpiar</a>
+    </div>
+  </form>
+
+  <hr>
+
+  <!-- Resumen general -->
+  <h4 class="text-success">📌 Resumen General</h4>
+  <ul class="list-group mb-4">
+    <li class="list-group-item"><strong>Total de Alumnos:</strong> {{ total_alumnos }}</li>
+    <li class="list-group-item"><strong>Atrasos Hoy:</strong> {{ atrasos_hoy }}</li>
+    <li class="list-group-item"><strong>Promedio Mensual de Atrasos:</strong> {{ promedio_mensual }}</li>
+  </ul>
+
+  <!-- Top 5 alumnos con más atrasos -->
+  <h4 class="text-danger">🚨 Top 5 Alumnos con más atrasos este mes</h4>
+  <div class="table-responsive mb-4">
+    <table class="table table-striped table-bordered">
+      <thead class="table-dark">
+        <tr>
+          <th>Nombre</th>
+          <th>Curso</th>
+          <th>Total Atrasos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alumno in alumnos_con_mas_atrasos %}
+        <tr>
+          <td>{{ alumno.alumno__nombre_completo }}</td>
+          <td>{{ alumno.alumno__curso__nombre }}</td>
+          <td>{{ alumno.total }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">No hay datos</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Alertas -->
+  <h4 class="text-warning">⚠️ Alertas: Alumnos con 3 o más atrasos este mes</h4>
+  <div class="table-responsive mb-4">
+    <table class="table table-bordered table-hover">
+      <thead class="table-warning">
+        <tr>
+          <th>Nombre</th>
+          <th>Curso</th>
+          <th>Total Atrasos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alerta in alertas %}
+        <tr>
+          <td>{{ alerta.alumno__nombre_completo }}</td>
+          <td>{{ alerta.alumno__curso__nombre }}</td>
+          <td>{{ alerta.total }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">Sin alertas actuales</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Resumen por curso -->
+  <h4 class="text-info">📘 Resumen por Curso (Mes Actual)</h4>
+  <div class="table-responsive mb-5">
+    <table class="table table-sm table-striped">
+      <thead class="table-light">
+        <tr>
+          <th>Curso</th>
+          <th>Total Atrasos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for curso in atrasos_por_curso %}
+        <tr>
+          <td>{{ curso.alumno__curso__nombre }}</td>
+          <td>{{ curso.total }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="2">Sin registros este mes</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+</div>
+{% endblock %}

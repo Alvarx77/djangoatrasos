@@ -1,0 +1,26 @@
+{% extends 'alumnos/base.html' %}
+
+{% block title %}Alertas de Atrasos{% endblock %}
+
+{% block content %}
+<h2>🔔 Alumnos con 3 o más Atrasos este Mes</h2>
+
+{% if alertas %}
+<table border="1">
+    <tr>
+        <th>Nombre</th>
+        <th>Curso</th>
+        <th>Total de Atrasos</th>
+    </tr>
+    {% for alumno in alertas %}
+    <tr>
+        <td>{{ alumno.alumno__nombre_completo }}</td>
+        <td>{{ alumno.alumno__curso__nombre }}</td>
+        <td>{{ alumno.total }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>No hay alertas activas este mes.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,112 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}Registro de Atrasos{% endblock %}
+
+{% block content %}
+<div class="container">
+  <h2 class="my-4 text-primary">📋 Registro de Atrasos</h2>
+
+  <!-- Filtros -->
+  <form method="get" class="row g-3 align-items-end mb-4">
+    <div class="col-md-4">
+      <label for="curso" class="form-label">Filtrar por Curso</label>
+      <select name="curso" id="curso" class="form-select">
+        <option value="">Todos</option>
+        {% for curso in cursos %}
+          <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_seleccionado %}selected{% endif %}>{{ curso.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-4">
+      <label for="nombre" class="form-label">Filtrar por Alumno</label>
+      <select name="nombre" id="nombre" class="form-select">
+        <option value="">Todos</option>
+        {% for alumno in alumnos %}
+          <option value="{{ alumno.id }}" {% if alumno.id|stringformat:"s" == nombre_seleccionado %}selected{% endif %}>
+            {{ alumno.nombre_completo }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <label for="fecha" class="form-label">Filtrar por Fecha</label>
+      <input type="date" name="fecha" id="fecha" value="{{ fecha_seleccionada|default:'' }}" class="form-control">
+    </div>
+
+    <div class="col-md-1 d-grid">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+
+    <div class="col-md-12 mt-2">
+      <a href="{% url 'listar_atrasos' %}" class="btn btn-secondary">Limpiar</a>
+      <a href="{% url 'registrar_atraso' %}" class="btn btn-secondary">⬅️ Volver </a>
+    </div>
+  </form>
+
+  <!-- Tabla de atrasos -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-hover align-middle text-center">
+      <thead class="table-light">
+        <tr>
+          <th>Alumno</th>
+          <th>Curso</th>
+          <th>Fecha</th>
+          <th>Hora</th>
+          <th>Minutos Tarde</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for atraso in atrasos %}
+        <tr>
+          <td>{{ atraso.alumno.nombre_completo }}</td>
+          <td>{{ atraso.alumno.curso.nombre }}</td>
+          <td>{{ atraso.fecha }}</td>
+          <td>{{ atraso.hora_llegada }}</td>
+          <td>{{ atraso.minutos_tarde }}</td>
+          <td>{{ atraso.get_estado_display }}</td>
+          <td>
+            <a href="{% url 'editar_atraso' atraso.id %}" class="btn btn-sm btn-warning">✏️</a>
+            <form method="post" action="{% url 'eliminar_atraso' atraso.id %}" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Está seguro que desea eliminar este atraso?');">🗑️</button>
+            </form>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">No hay registros de atrasos</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  <nav aria-label="Paginación de atrasos">
+    <ul class="pagination justify-content-center">
+      {% if atrasos.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1{% if request.GET.nombre %}&nombre={{ request.GET.nombre }}{% endif %}{% if request.GET.curso %}&curso={{ request.GET.curso }}{% endif %}{% if request.GET.fecha %}&fecha={{ request.GET.fecha }}{% endif %}">Primero</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ atrasos.previous_page_number }}{% if request.GET.nombre %}&nombre={{ request.GET.nombre }}{% endif %}{% if request.GET.curso %}&curso={{ request.GET.curso }}{% endif %}{% if request.GET.fecha %}&fecha={{ request.GET.fecha }}{% endif %}">Anterior</a>
+        </li>
+      {% endif %}
+
+      <li class="page-item disabled">
+        <span class="page-link">Página {{ atrasos.number }} de {{ atrasos.paginator.num_pages }}</span>
+      </li>
+
+      {% if atrasos.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ atrasos.next_page_number }}{% if request.GET.nombre %}&nombre={{ request.GET.nombre }}{% endif %}{% if request.GET.curso %}&curso={{ request.GET.curso }}{% endif %}{% if request.GET.fecha %}&fecha={{ request.GET.fecha }}{% endif %}">Siguiente</a>
+        </li>
+        <li class="page-item">
+          <a class="page-link" href="?page={{ atrasos.paginator.num_pages }}{% if request.GET.nombre %}&nombre={{ request.GET.nombre }}{% endif %}{% if request.GET.curso %}&curso={{ request.GET.curso }}{% endif %}{% if request.GET.fecha %}&fecha={{ request.GET.fecha }}{% endif %}">Último</a>
+        </li>
+      {% endif %}
+    </ul>
+  </nav>
+</div>
+{% endblock %}

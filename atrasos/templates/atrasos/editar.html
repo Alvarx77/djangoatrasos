@@ -1,0 +1,83 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}✏️ Editar Atraso{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5 p-4 shadow rounded bg-white">
+  <h2 class="mb-4 text-warning text-center">✏️ Editar Atraso</h2>
+
+  <form method="post" class="needs-validation" novalidate>
+    {% csrf_token %}
+
+    <div class="row g-3">
+      <!-- Curso -->
+      <div class="col-md-6">
+        <label for="curso" class="form-label">Curso:</label>
+        <select id="curso" name="curso" class="form-select" required>
+          <option value="" disabled>Seleccionar curso</option>
+          {% for curso in cursos %}
+            <option value="{{ curso.id }}" {% if curso.id == atraso.alumno.curso.id %}selected{% endif %}>{{ curso.nombre }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Alumno -->
+      <div class="col-md-6">
+        <label for="alumno" class="form-label">Nombre del Alumno:</label>
+        <select name="alumno" id="alumno" class="form-select" required>
+          <option value="" disabled>Seleccionar alumno</option>
+          {% for alumno in alumnos %}
+            <option value="{{ alumno.id }}" data-curso="{{ alumno.curso.id }}"
+              {% if alumno.id == atraso.alumno.id %}selected{% endif %}>
+              {{ alumno.nombre_completo }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <!-- Hora -->
+      <div class="col-md-6">
+        <label for="hora_llegada" class="form-label">Hora de llegada:</label>
+        <input type="time" name="hora_llegada" id="hora_llegada" class="form-control"
+               value="{{ atraso.hora_llegada|time:'H:i' }}" required>
+      </div>
+
+      <!-- Estado -->
+      <div class="col-md-6">
+        <label for="estado" class="form-label">Estado:</label>
+        <select name="estado" id="estado" class="form-select" required>
+          <option value="pendiente" {% if atraso.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+          <option value="justificado" {% if atraso.estado == 'justificado' %}selected{% endif %}>Justificado</option>
+          <option value="no_justificado" {% if atraso.estado == 'no_justificado' %}selected{% endif %}>No Justificado</option>
+        </select>
+      </div>
+
+      <!-- Comentario -->
+      <div class="col-12">
+        <label for="comentario" class="form-label">Comentario (opcional):</label>
+        <textarea name="comentario" id="comentario" class="form-control" rows="4">{{ atraso.comentario }}</textarea>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="d-grid gap-2 d-md-flex justify-content-md-center mt-4">
+      <button type="submit" class="btn btn-success btn-lg px-4">💾 Actualizar Atraso</button>
+      <a href="{% url 'listar_atrasos' %}" class="btn btn-outline-primary btn-lg px-4">📄 Ver Lista</a>
+    </div>
+  </form>
+</div>
+
+<!-- Script para filtrar alumnos según curso -->
+<script>
+  const cursoSelect = document.getElementById('curso');
+  const alumnoSelect = document.getElementById('alumno');
+
+  cursoSelect.addEventListener('change', function () {
+    const cursoId = this.value;
+    Array.from(alumnoSelect.options).forEach(option => {
+      const pertenece = option.dataset.curso === cursoId;
+      option.style.display = pertenece || option.value === "" ? 'block' : 'none';
+    });
+    alumnoSelect.value = "";
+  });
+</script>
+{% endblock %}

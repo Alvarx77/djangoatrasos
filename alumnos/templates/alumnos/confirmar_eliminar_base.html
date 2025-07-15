@@ -1,0 +1,17 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}⚠️ Confirmar Eliminación Total{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+  <h2 class="text-danger">🧨 Eliminar Toda la Base de Datos</h2>
+  <p class="text-muted mt-3">Esta acción eliminará <strong>todos los cursos, alumnos y registros de atrasos</strong>.</p>
+  <p class="text-warning fw-bold">Se generará un respaldo en Excel antes de eliminar.</p>
+  <p class="text-danger fw-bold">⚠️ Esta acción no se puede deshacer.</p>
+
+  <form method="post">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-danger btn-lg mt-3">Sí, eliminar todo y guardar respaldo</button>
+    <a href="{% url 'opciones_admin' %}" class="btn btn-secondary btn-lg mt-3">⬅️ Cancelar</a>
+  </form>
+</div>
+{% endblock %}

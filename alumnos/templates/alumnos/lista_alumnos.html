@@ -1,0 +1,108 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}🧑‍🏫 Lista de Alumnos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+
+  <!-- Botón Volver al Panel -->
+  <div class="mb-3">
+    <a href="{% url 'opciones_admin' %}" class="btn btn-outline-secondary">
+      ⬅️ Volver al Panel Principal
+    </a>
+  </div>
+
+  <h2 class="text-primary mb-4">🧑‍🏫 Lista de Alumnos</h2>
+
+  <!-- Botón para agregar alumno -->
+  <div class="mb-3 text-end">
+    <a href="{% url 'agregar_alumno' %}" class="btn btn-success">➕ Agregar Alumno</a>
+  </div>
+
+  <!-- Filtros -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-6">
+      <input type="text" name="nombre" class="form-control" placeholder="Buscar por nombre" value="{{ request.GET.nombre }}">
+    </div>
+    <div class="col-md-4">
+      <select name="curso" class="form-select">
+        <option value="">Todos los cursos</option>
+        {% for curso in cursos %}
+          <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == request.GET.curso %}selected{% endif %}>
+            {{ curso.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button type="submit" class="btn btn-primary w-100">🔍 Filtrar</button>
+    </div>
+  </form>
+
+  <!-- Tabla de alumnos -->
+  <div class="table-responsive">
+    <table class="table table-bordered table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>Nombre</th>
+          <th>Curso</th>
+          <th>Atrasos</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for alumno in page_obj %}
+        <tr>
+          <td>{{ alumno.nombre_completo }}</td>
+          <td>{{ alumno.curso.nombre }}</td>
+          <td>{{ alumno.atraso_set.count }}</td>
+          <td>
+            <a href="{% url 'editar_alumno' alumno.id %}" class="btn btn-warning btn-sm">✏️ Editar</a>
+            <a href="{% url 'eliminar_alumno' alumno.id %}" class="btn btn-danger btn-sm">🗑️ Eliminar</a>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4">No hay alumnos registrados.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Paginación -->
+  {% if page_obj.has_other_pages %}
+  <div class="d-flex justify-content-between align-items-center mt-3">
+
+    <!-- Texto informativo -->
+    <div class="text-muted">
+      Mostrando {{ page_obj.start_index }} - {{ page_obj.end_index }} de {{ page_obj.paginator.count }} alumnos
+    </div>
+
+    <!-- Controles de paginación -->
+    <nav aria-label="Paginación">
+      <ul class="pagination mb-0">
+        {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&nombre={{ request.GET.nombre }}&curso={{ request.GET.curso }}">Anterior</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Anterior</span></li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}&nombre={{ request.GET.nombre }}&curso={{ request.GET.curso }}">{{ num }}</a>
+          </li>
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&nombre={{ request.GET.nombre }}&curso={{ request.GET.curso }}">Siguiente</a>
+          </li>
+        {% else %}
+          <li class="page-item disabled"><span class="page-link">Siguiente</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}❌ Confirmar Eliminación{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-danger mb-4">❌ Confirmar Eliminación</h2>
+
+  <div class="alert alert-danger">
+    ¿Deseas eliminar al alumno <strong>{{ alumno.nombre_completo }}</strong>? Esta acción no se puede deshacer.
+  </div>
+
+  <form method="post">
+    {% csrf_token %}
+    <div class="d-flex justify-content-between">
+      <a href="{% url 'lista_alumnos' %}" class="btn btn-secondary">⬅️ Cancelar</a>
+      <button type="submit" class="btn btn-danger">🗑️ Confirmar Eliminación</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

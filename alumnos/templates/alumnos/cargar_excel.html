@@ -1,0 +1,35 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}Cargar Excel SIGE{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="text-primary mb-4">📤 Cargar alumnos desde Excel SIGE (.xls)</h2>
+
+    <form method="post" enctype="multipart/form-data" class="border p-4 rounded shadow-sm bg-light">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="archivo" class="form-label">Seleccionar archivo Excel (.xls):</label>
+            <input type="file" name="archivo" id="archivo" accept=".xls" required class="form-control">
+        </div>
+        <button type="submit" class="btn btn-success">Subir</button>
+        <a href="{% url 'dashboard_admin' %}" class="btn btn-secondary ms-2">Cancelar</a>
+    </form>
+
+    {% if messages %}
+        <div class="mt-4">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Recomendación al pie -->
+    <div class="alert alert-info mt-5 text-center">
+        💡 <strong>Recomendación:</strong> Guarda tu archivo SIGE como <em>Libro de Excel</em> (.xls) antes de subirlo, para asegurar que se cargue correctamente en el sistema.
+    </div>
+</div>
+{% endblock %}
+

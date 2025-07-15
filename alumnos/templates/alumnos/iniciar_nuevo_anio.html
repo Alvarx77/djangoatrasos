@@ -1,0 +1,67 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}🗓️ Iniciar Nuevo Año Escolar{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="text-primary mb-4">🗓️ Gestión del Año Escolar</h2>
+
+  <!-- Seleccionar Año de Trabajo -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title">📅 Establecer Año de Trabajo</h5>
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="anio_seleccionado" class="form-label">Año actual de trabajo:</label>
+          <select id="anio_seleccionado" name="anio_seleccionado" class="form-select" required>
+            {% for year in lista_anios %}
+              <option value="{{ year }}" {% if year == anio_actual %}selected{% endif %}>{{ year }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" name="accion" value="cambiar_anio" class="btn btn-primary">✅ Establecer Año</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Iniciar nuevo año escolar -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title">🔄 Iniciar Año Escolar Nuevo</h5>
+      <p class="card-text text-muted">Avanza los cursos automáticamente y elimina 8° básico.</p>
+      <form method="post" onsubmit="return confirm('¿Seguro que deseas iniciar el nuevo año escolar?')">
+        {% csrf_token %}
+        <button type="submit" name="accion" value="iniciar_nuevo" class="btn btn-warning">
+          🔄 Iniciar Año Escolar Nuevo
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Restaurar año anterior -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5 class="card-title">♻️ Restaurar Año Anterior</h5>
+      <form method="post" onsubmit="return confirm('¿Deseas restaurar los datos desde el año anterior? Esto eliminará los datos actuales.')">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="anio_restaurar" class="form-label">Año a restaurar:</label>
+          <select id="anio_restaurar" name="anio_restaurar" class="form-select" required>
+            {% for year in lista_anios %}
+              {% if year != anio_actual %}
+                <option value="{{ year }}">{{ year }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+        </div>
+        <button type="submit" name="accion" value="restaurar" class="btn btn-danger">♻️ Restaurar Año</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Regresar -->
+  <div class="text-center">
+    <a href="{% url 'opciones_admin' %}" class="btn btn-secondary mt-3">⬅️ Volver a Más Opciones</a>
+  </div>
+</div>
+{% endblock %}
