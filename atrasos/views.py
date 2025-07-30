@@ -1,5 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
-from .models import Atraso  # ✅ Correcto
+from .models import Atraso
 from alumnos.models import Alumno, Curso
 from django.utils import timezone
 from django.contrib import messages
@@ -14,6 +14,7 @@ from alumnos.models import Alumno, Curso
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.contrib.messages import get_messages
+
 
 
 def logout_view(request):
@@ -76,7 +77,7 @@ def registrar_atraso(request):
                     )
 
                     messages.success(request, "✅ Atraso registrado correctamente.")
-                    return redirect('listar_atrasos')
+                    return redirect('registrar_atraso')
 
             except Alumno.DoesNotExist:
                 errores.append("El alumno seleccionado no existe.")

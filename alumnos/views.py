@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib.auth.models import Group
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.shortcuts import render, redirect
 from django.utils.timezone import now, localtime
 from datetime import date
@@ -274,25 +274,18 @@ def lista_alumnos(request):
     return render(request, 'alumnos/lista_alumnos.html', {'alumnos': alumnos})
 
 
+from collections import defaultdict
+from django.db.models import Count, Q
+from django.db.models.functions import TruncDay
+
 @login_required
 def estadisticas(request):
     hoy = now().date()
     mes = hoy.month
     anio = hoy.year
-
     atrasos_mes = Atraso.objects.filter(fecha__month=mes, fecha__year=anio)
 
-    # Gráfico de barras - Atrasos por curso
-    atrasos_por_curso = (
-        atrasos_mes
-        .values('alumno__curso__nombre')
-        .annotate(total=Count('id'))
-        .order_by('alumno__curso__nombre')
-    )
-    curso_labels = [c['alumno__curso__nombre'] for c in atrasos_por_curso]
-    curso_values = [c['total'] for c in atrasos_por_curso]
-
-    # Gráfico de líneas - Atrasos por día
+    # 1. Gráfico de líneas - Atrasos por día
     atrasos_por_dia = (
         atrasos_mes
         .annotate(dia=TruncDay('fecha'))
@@ -303,10 +296,11 @@ def estadisticas(request):
     dias_labels = [a['dia'].strftime('%d-%m') for a in atrasos_por_dia]
     dias_values = [a['total'] for a in atrasos_por_dia]
 
-    # Gráfico de pastel - porcentaje alumnos con más de 3 atrasos
+    # 2. Gráfico de pastel - alumnos con 3 o más atrasos
     total_alumnos = Alumno.objects.count()
     con_3_mas = (
-        atrasos_mes.values('alumno')
+        atrasos_mes
+        .values('alumno')
         .annotate(total=Count('id'))
         .filter(total__gte=3)
         .count()
@@ -314,13 +308,93 @@ def estadisticas(request):
     otros = total_alumnos - con_3_mas
     pie_values = [con_3_mas, max(otros, 0)]
 
+    # 3. Gráfico apilado - alumnos con menos de 3 y con 3 o más atrasos por curso
+    alumnos_con_atrasos = (
+        atrasos_mes
+        .values('alumno__id', 'alumno__curso__nombre')
+        .annotate(total=Count('id'))
+    )
+
+    stacked_labels = sorted(set([x['alumno__curso__nombre'] for x in alumnos_con_atrasos]))
+    stacked_menos_3 = []
+    stacked_3_mas = []
+
+    for curso in stacked_labels:
+        menos_3 = sum(1 for a in alumnos_con_atrasos if a['alumno__curso__nombre'] == curso and a['total'] < 3)
+        mas_3 = sum(1 for a in alumnos_con_atrasos if a['alumno__curso__nombre'] == curso and a['total'] >= 3)
+        stacked_menos_3.append(menos_3)
+        stacked_3_mas.append(mas_3)
+
+    # 4. Gráfico - Total atrasos vs Justificados vs Total real
+    cursos = Curso.objects.all()
+    grafico_cursos = []
+    grafico_justificados = []
+    grafico_reales = []
+
+    for curso in cursos:
+        total = atrasos_mes.filter(alumno__curso=curso).count()
+        justificados = atrasos_mes.filter(alumno__curso=curso, estado='justificado').count()
+        real = total - justificados
+        grafico_cursos.append(curso.nombre)
+        grafico_justificados.append(justificados)
+        grafico_reales.append(real)
+
+    # 5. Cursos disponibles y gráfico de alumnos filtrado por curso
+    cursos_disponibles = Curso.objects.all()
+    curso_actual = request.GET.get('curso')
+
+    if curso_actual:
+        try:
+            curso_obj = Curso.objects.get(id=int(curso_actual))
+        except (ValueError, Curso.DoesNotExist):
+            curso_obj = None
+    else:
+        # Buscar el primer curso con atrasos en el mes si no se selecciona ninguno
+        cursos_con_datos_ids = Atraso.objects.filter(
+            fecha__month=mes,
+            fecha__year=anio
+        ).values_list('alumno__curso__id', flat=True).distinct()
+
+        cursos_con_datos = Curso.objects.filter(id__in=cursos_con_datos_ids)
+        curso_obj = cursos_con_datos.first() if cursos_con_datos.exists() else None
+
+    # Obtener alumnos filtrados
+    alumnos_filtrados = Alumno.objects.filter(curso=curso_obj) if curso_obj else Alumno.objects.none()
+
+    # 6. Datos por alumno (Total y Justificados)
+    datos_por_alumno = []
+    for alumno in alumnos_filtrados:
+        total = atrasos_mes.filter(alumno=alumno).count()
+        justificados = atrasos_mes.filter(alumno=alumno, estado='justificado').count()
+        if total > 0:
+            datos_por_alumno.append({
+                'nombre': alumno.nombre_completo,
+                'total': total,
+                'justificados': justificados,
+            })
+
+    nombres_alumnos = [d['nombre'] for d in datos_por_alumno]
+    atrasos_totales = [d['total'] for d in datos_por_alumno]
+    atrasos_justificados = [d['justificados'] for d in datos_por_alumno]
+
+    # 7. Enviar todo al template
     context = {
-        'curso_labels': curso_labels,
-        'curso_values': curso_values,
         'dias_labels': dias_labels,
         'dias_values': dias_values,
         'pie_values': pie_values,
+        'stacked_labels': stacked_labels,
+        'stacked_menos_3': stacked_menos_3,
+        'stacked_3_mas': stacked_3_mas,
+        'grafico_cursos': grafico_cursos,
+        'grafico_justificados': grafico_justificados,
+        'grafico_reales': grafico_reales,
+        'cursos_disponibles': cursos_disponibles,
+        'curso_actual': curso_obj.id if curso_obj else '',
+        'nombres_alumnos': nombres_alumnos,
+        'atrasos_totales': atrasos_totales,
+        'atrasos_justificados': atrasos_justificados,
     }
+
     return render(request, 'alumnos/estadisticas.html', context)
 
 
@@ -446,9 +520,6 @@ def exportar_excel(request):
     )
     response['Content-Disposition'] = 'attachment; filename=Informe_Atrasos_Completo.xlsx'
     return response
-
-
-
 
 
 @login_required

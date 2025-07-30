@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-$y8x&!++gt_1pd+wftf4e6vz4k#uva-so_7qt#wtjo-8!w38qd
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['djangoatrasos.pythonanywhere.com']
 
 
 # Application definition
@@ -80,10 +80,15 @@ WSGI_APPLICATION = 'registro_atrasos.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'djangoatrasos$default',
+        'USER': 'djangoatrasos',
+        'PASSWORD': 'Escuelajgg',
+        'HOST': 'djangoatrasos.mysql.pythonanywhere-services.com',
+        'PORT': '3306',
     }
 }
+
 
 
 # Password validation

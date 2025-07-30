@@ -3,25 +3,50 @@
 
 {% block content %}
 <div class="container mt-5">
-  <h2 class="text-center text-primary mb-4">📊 Estadísticas de Atrasos</h2>
+  <h2 id="estadisticas" class="text-center text-primary mb-4">📊 Estadísticas de Atrasos</h2>
 
   <div class="text-end mb-3">
     <a href="{% url 'dashboard_admin' %}" class="btn btn-secondary">⬅️ Volver al Panel</a>
   </div>
 
   <div class="row justify-content-center">
-    <div class="col-12 col-md-10 col-lg-8 mb-5">
-      <h4 class="text-center">Atrasos por Curso</h4>
-      <canvas id="barChart" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 400px;"></canvas>
+    <!-- 1. Atrasos por alumno -->
+    <div class="col-12 col-md-10 col-lg-10 mb-5">
+      <h4 class="text-center">Atrasos Justificados y Totales por Alumno</h4>
+      <form method="get" action="#estadisticas" class="mb-3 text-center">
+        <label for="curso">Seleccionar Curso:</label>
+        <select name="curso" id="curso" onchange="this.form.submit()" class="form-select d-inline-block w-auto">
+          {% for curso in cursos_disponibles %}
+            <option value="{{ curso.id }}" {% if curso.id|stringformat:"s" == curso_actual|stringformat:"s" %}selected{% endif %}>
+              {{ curso.nombre }}
+            </option>
+          {% endfor %}
+        </select>
+      </form>
+      <canvas id="grafico_alumnos" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 500px;"></canvas>
     </div>
 
+    <!-- 2. Alumnos con menos de 3 y con 3+ atrasos -->
+    <div class="col-12 col-md-10 col-lg-8 mb-5">
+      <h4 class="text-center">Alumnos con menos de 3 y 3+ Atrasos (por Curso)</h4>
+      <canvas id="stackedBarChart" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 400px;"></canvas>
+    </div>
+
+    <!-- 3. Atrasos por día del mes -->
     <div class="col-12 col-md-10 col-lg-8 mb-5">
       <h4 class="text-center">Atrasos por Día del Mes</h4>
       <canvas id="lineChart" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 400px;"></canvas>
     </div>
 
+    <!-- 4. Total atrasos vs justificados vs reales -->
+    <div class="col-12 col-md-10 col-lg-8 mb-5">
+      <h4 class="text-center">Total Atrasos vs Justificados por Curso</h4>
+      <canvas id="graficoAtrasosJustificados" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 400px;"></canvas>
+    </div>
+
+    <!-- 5. Gráfico de pastel -->
     <div class="col-12 col-md-8 col-lg-6 mb-5">
-      <h4 class="text-center">% Alumnos con 3+ Atrasos</h4>
+      <h4 class="text-center">Alumnos con 3+ Atrasos</h4>
       <canvas id="pieChart" class="shadow-sm bg-white p-3 rounded" style="width: 100%; height: 350px;"></canvas>
     </div>
   </div>
@@ -30,79 +55,177 @@
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-new Chart(document.getElementById('barChart'), {
-    type: 'bar',
+  // 1. Atrasos por alumno
+  new Chart(document.getElementById("grafico_alumnos"), {
+    type: "bar",
     data: {
-        labels: {{ curso_labels|safe }},
-        datasets: [{
-            label: 'Atrasos por Curso',
-            data: {{ curso_values|safe }},
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-            borderRadius: 5
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false }
+      labels: {{ nombres_alumnos|safe }},
+      datasets: [
+        {
+          label: "Atrasos Justificados",
+          data: {{ atrasos_justificados|safe }},
+          backgroundColor: "rgba(75, 192, 192, 0.8)"
         },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 1
-                },
-                suggestedMax: 10  // ← Esto mejora la escala
-            }
+        {
+          label: "Total Atrasos",
+          data: {{ atrasos_totales|safe }},
+          backgroundColor: "rgba(255, 99, 132, 0.8)"
         }
-    }
-});
-
-new Chart(document.getElementById('lineChart'), {
-    type: 'line',
-    data: {
-        labels: {{ dias_labels|safe }},
-        datasets: [{
-            label: 'Atrasos por Día del Mes',
-            data: {{ dias_values|safe }},
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.3,
-            fill: true
-        }]
+      ]
     },
     options: {
-        responsive: true,
-        plugins: {
-            legend: { position: 'top' }
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" },
+        tooltip: {
+          mode: 'nearest',
+          intersect: true,
+          callbacks: {
+            footer: function(items) {
+              const total = items.reduce((sum, item) => sum + item.parsed.x, 0);
+              return "🧾 Total Atrasos: " + total;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } },
+        y: { stacked: true }
+      }
+    }
+  });
+
+  // 2. Apilado por curso
+  new Chart(document.getElementById("stackedBarChart"), {
+    type: "bar",
+    data: {
+      labels: {{ stacked_labels|safe }},
+      datasets: [
+        {
+          label: "Alumnos con < 3 Atrasos",
+          data: {{ stacked_menos_3|safe }},
+          backgroundColor: "rgba(54, 162, 235, 0.6)"
         },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    stepSize: 1
-                },
-                suggestedMax: 10
-            }
+        {
+          label: "Alumnos con ≥ 3 Atrasos",
+          data: {{ stacked_3_mas|safe }},
+          backgroundColor: "rgba(255, 99, 132, 0.6)"
         }
-    }
-});
-
-new Chart(document.getElementById('pieChart'), {
-    type: 'pie',
-    data: {
-        labels: ['Con 3+ Atrasos', 'Otros'],
-        datasets: [{
-            data: {{ pie_values|safe }},
-            backgroundColor: ['#ff6384', '#36a2eb']
-        }]
+      ]
     },
     options: {
-        responsive: true,
-        plugins: {
-            legend: { position: 'bottom' }
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            footer: function(items) {
+              const total = items.reduce((sum, item) => sum + item.parsed.y, 0);
+              return "👥 Total Alumnos con Atraso: " + total;
+            }
+          }
         }
+      },
+      scales: {
+        x: { stacked: true },
+        y: { stacked: true, beginAtZero: true, ticks: { stepSize: 1 } }
+      }
     }
-});
+  });
+
+  // 3. Línea por día
+  new Chart(document.getElementById("lineChart"), {
+    type: "line",
+    data: {
+      labels: {{ dias_labels|safe }},
+      datasets: [{
+        label: "Atrasos por Día del Mes",
+        data: {{ dias_values|safe }},
+        borderColor: "rgba(75, 192, 192, 1)",
+        backgroundColor: "rgba(75, 192, 192, 0.2)",
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "top" }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { stepSize: 1 },
+          suggestedMax: 10
+        }
+      }
+    }
+  });
+
+  // 4. Justificados vs reales
+  new Chart(document.getElementById("graficoAtrasosJustificados"), {
+    type: "bar",
+    data: {
+      labels: {{ grafico_cursos|safe }},
+      datasets: [
+        {
+          label: "Atrasos Justificados",
+          data: {{ grafico_justificados|safe }},
+          backgroundColor: "rgba(75, 192, 192, 0.7)"
+        },
+        {
+          label: "Total Real Atrasos",
+          data: {{ grafico_reales|safe }},
+          backgroundColor: "rgba(255, 159, 64, 0.7)"
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          callbacks: {
+            footer: function(items) {
+              const total = items.reduce((sum, item) => sum + item.parsed.y, 0);
+              return "📌 Total Atrasos: " + total;
+            }
+          }
+        }
+      },
+      scales: {
+        x: { stacked: true },
+        y: {
+          stacked: true,
+          beginAtZero: true,
+          ticks: { stepSize: 1 },
+          title: { display: true, text: "Cantidad de Atrasos" }
+        }
+      }
+    }
+  });
+
+  // 5. Pastel
+  new Chart(document.getElementById("pieChart"), {
+    type: "pie",
+    data: {
+      labels: ["Con 3+ Atrasos", "Otros"],
+      datasets: [{
+        data: {{ pie_values|safe }},
+        backgroundColor: ["#ff6384", "#36a2eb"]
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: "bottom" }
+      }
+    }
+  });
 </script>
 {% endblock %}
