@@ -40,7 +40,11 @@ from .forms import AlumnoForm
 import unicodedata
 from atrasos.models import Atraso  # ✅ Correcto si está definido en la app 'atrasos'
 
-
+from .models import Seguimiento
+from .forms import SeguimientoForm
+import datetime
+from django.urls import reverse
+from django.utils.http import urlencode
 
 # ------------------------------
 # 1. Vista HOME (Login)
@@ -721,3 +725,154 @@ def eliminar_base(request):
     else:
         messages.error(request, "⚠️ Acción no permitida.")
         return redirect('opciones_admin')
+
+
+
+
+
+# ✅ VISTA GENERAL DE SEGUIMIENTO (semáforo)
+@login_required
+def seguimiento(request):
+    cursos = Curso.objects.all().order_by('nombre')  # Se ordenan los cursos alfabéticamente
+    curso_id = request.GET.get('curso')
+    fecha_str = request.GET.get('fecha')
+
+    # Si no hay curso seleccionado, se usa el primer curso disponible
+    if not curso_id and cursos.exists():
+        curso_id = cursos.first().id
+
+    # Usar fecha actual si no se especifica
+    if fecha_str:
+        try:
+            fecha = date.fromisoformat(fecha_str)
+        except ValueError:
+            fecha = date.today()
+    else:
+        fecha = date.today()
+
+    semana_actual = fecha.isocalendar()[1]
+    anio_actual = fecha.year
+    mes_actual = fecha.month  # 👈 Añadido para calcular el mes
+
+    # Obtener alumnos del curso seleccionado y ordenarlos por nombre completo
+    alumnos = Alumno.objects.select_related('curso').filter(curso_id=curso_id).order_by('nombre_completo')
+
+    # Filtrar todos los atrasos del año
+    atrasos_ano = Atraso.objects.filter(fecha__year=anio_actual)
+
+    # Filtrar manualmente por semana actual
+    atrasos_semana = [a for a in atrasos_ano if a.fecha.isocalendar()[1] == semana_actual]
+
+    alumnos_info = []
+    for alumno in alumnos:
+        # Atrasos semanales
+        atrasos_alumno_semana = [a for a in atrasos_semana if a.alumno_id == alumno.id]
+        total_semanal = len(atrasos_alumno_semana)
+
+        # Atrasos mensuales
+        atrasos_alumno_mes = atrasos_ano.filter(alumno_id=alumno.id, fecha__month=mes_actual)
+        total_mensual = atrasos_alumno_mes.count()
+
+        estado = "verde"
+        seguimiento_url = ""
+        advertencia = False
+
+        if total_semanal >= 3:
+            estado = "rojo"
+            seguimiento_url = reverse('seguimiento_individual', args=[alumno.id, semana_actual, anio_actual])
+            seguimientos = Seguimiento.objects.filter(
+                alumno=alumno,
+                anio=anio_actual,
+                semana__lt=semana_actual,
+                incumplido=True
+            )
+            if seguimientos.exists():
+                advertencia = True
+        elif 1 <= total_semanal <= 2:
+            estado = "amarillo"
+
+        alumnos_info.append({
+            'alumno': alumno,
+            'curso': alumno.curso.nombre if alumno.curso else "Sin curso",
+            'atrasos': total_semanal,
+            'mensual': total_mensual,  # 👈 Añadido
+            'estado': estado,
+            'advertencia': advertencia,
+            'seguimiento_url': seguimiento_url,
+        })
+
+    context = {
+        'cursos': cursos,
+        'alumnos_info': alumnos_info,
+        'curso_seleccionado': int(curso_id),
+        'fecha_seleccionada': fecha.strftime("%Y-%m-%d"),
+    }
+    return render(request, 'alumnos/seguimiento.html', context)
+
+
+
+# ✅ VISTA INDIVIDUAL DE SEGUIMIENTO POR ALUMNO
+@login_required
+def seguimiento_individual(request, alumno_id, semana, anio):
+    alumno = get_object_or_404(Alumno, id=alumno_id)
+
+    seguimiento_actual, creado = Seguimiento.objects.get_or_create(
+        alumno=alumno,
+        semana=semana,
+        anio=anio,
+        defaults={'veces_incumplido': 0}
+    )
+
+    mensaje_alerta = ""
+    if request.method == 'POST':
+        form = SeguimientoForm(request.POST, instance=seguimiento_actual)
+        if form.is_valid():
+            seguimiento = form.save(commit=False)
+
+            semana_anterior = semana - 1
+            anterior = Seguimiento.objects.filter(
+                alumno=alumno,
+                semana=semana_anterior,
+                anio=anio,
+                compromiso_alumno=True
+            ).first()
+
+            atrasos_esta_semana = Atraso.objects.filter(
+                alumno=alumno,
+                fecha__week=semana,
+                fecha__year=anio
+            ).count()
+
+            if anterior and atrasos_esta_semana >= 3:
+                seguimiento.incumplido = True
+                seguimiento.veces_incumplido = anterior.veces_incumplido + 1
+                mensaje_alerta = "⚠️ El alumno incumplió el compromiso anterior"
+            else:
+                seguimiento.incumplido = False
+                seguimiento.veces_incumplido = anterior.veces_incumplido if anterior else 0
+
+            seguimiento.save()
+
+            # ✅ Redirigir al curso y fecha correspondientes
+            params = urlencode({
+                'curso': alumno.curso.id if alumno.curso else '',
+                'fecha': datetime.now().strftime('%Y-%m-%d')
+            })
+            return redirect(f"{reverse('seguimiento')}?{params}")
+
+    else:
+        form = SeguimientoForm(instance=seguimiento_actual)
+
+    historial = Seguimiento.objects.filter(alumno=alumno).order_by('-anio', '-semana')
+
+    context = {
+        'alumno': alumno,
+        'form': form,
+        'mensaje_alerta': mensaje_alerta,
+        'historial': historial,
+        'semana': semana,
+        'anio': anio,
+        'fecha_seleccionada': datetime.now().strftime('%Y-%m-%d'),  # 👈 agregado para el botón "Volver"
+    }
+    return render(request, 'alumnos/seguimiento_individual.html', context)
+

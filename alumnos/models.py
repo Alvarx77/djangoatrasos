@@ -13,3 +13,22 @@ class Alumno(models.Model):
 
     def __str__(self):
         return self.nombre_completo
+
+
+from alumnos.models import Alumno  # Ajusta si estás en otra app
+
+class Seguimiento(models.Model):
+    alumno = models.ForeignKey(Alumno, on_delete=models.CASCADE)
+    semana = models.IntegerField()
+    anio = models.IntegerField()
+    acuerdo_con_apoderado = models.BooleanField(default=False)
+    compromiso_alumno = models.BooleanField(default=False)
+    incumplido = models.BooleanField(default=False)
+    veces_incumplido = models.IntegerField(default=0)
+    observaciones = models.TextField(blank=True)
+
+    class Meta:
+        unique_together = ('alumno', 'semana', 'anio')
+
+    def __str__(self):
+        return f"{self.alumno} - Semana {self.semana}/{self.anio}"

@@ -1,0 +1,41 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}Seguimiento Individual{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h3 class="mb-3 text-primary">📄 Seguimiento: {{ alumno.nombre_completo }} - {{ alumno.curso.nombre }}</h3>
+  <p class="text-muted">Semana {{ semana }} - Año {{ anio }}</p>
+
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="mt-3">
+          <button type="submit" class="btn btn-success">💾 Guardar Seguimiento</button>
+          <a href="{% url 'seguimiento' %}?curso={{ alumno.curso.id }}&fecha={{ fecha_seleccionada }}" class="btn btn-secondary">⬅ Volver</a>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <h5 class="text-secondary">📊 Historial de Compromisos</h5>
+  <ul class="list-group">
+    {% for h in historial %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          Semana {{ h.semana }} - {{ h.anio }} |
+          Compromiso: <strong>{{ h.compromiso_alumno|yesno:"Sí,No" }}</strong> |
+          Incumplido:
+          <strong class="{% if h.incumplido %}text-danger{% else %}text-success{% endif %}">
+            {{ h.incumplido|yesno:"Sí,No" }}
+          </strong>
+        </div>
+        <span class="badge bg-info text-dark">Veces Incumplido: {{ h.veces_incumplido }}</span>
+      </li>
+    {% empty %}
+      <li class="list-group-item text-muted">No hay historial de compromisos para este alumno.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

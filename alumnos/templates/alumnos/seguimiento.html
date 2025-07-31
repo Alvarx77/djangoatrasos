@@ -1,0 +1,93 @@
+{% extends 'alumnos/base.html' %}
+{% block title %}Seguimiento Semanal{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2 class="mb-4">🔍 Seguimiento Semanal por Curso</h2>
+
+  <!-- 🔽 Botón para mostrar/ocultar leyenda -->
+  <button class="btn btn-outline-info mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#leyendaSeguimiento" aria-expanded="false" aria-controls="leyendaSeguimiento">
+    📘 Mostrar/Ocultar Leyenda
+  </button>
+
+  <!-- 🔽 Leyenda colapsable -->
+  <div class="collapse mb-4" id="leyendaSeguimiento">
+    <div class="alert alert-info">
+      <strong>Leyenda:</strong><br>
+      🟢 <span class="text-success fw-bold">Verde:</span> 0 atrasos<br>
+      🟡 <span class="text-warning fw-bold">Amarillo:</span> 1-2 atrasos<br>
+      🔴 <span class="text-danger fw-bold">Rojo:</span> 3 o más atrasos<br>
+      ⚠️ <span class="text-danger fw-bold">Incumplimiento:</span> El alumno incumplió un compromiso anterior<br>
+      📄 <span class="fw-bold">Ver Seguimiento:</span> Historial y compromisos del alumno
+    </div>
+  </div>
+
+  <!-- 🔽 Filtro por curso y fecha -->
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-6">
+      <label>Curso:</label>
+      <select name="curso" class="form-select" onchange="this.form.submit()">
+        <option value="">Todos los cursos</option>
+        {% for curso in cursos %}
+          <option value="{{ curso.id }}" {% if curso.id == curso_seleccionado %}selected{% endif %}>
+            {{ curso.nombre }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="col-md-6">
+      <label>Semana (selecciona un día):</label>
+      <input type="date" name="fecha" value="{{ fecha_seleccionada }}" class="form-control" onchange="this.form.submit()">
+    </div>
+  </form>
+
+  <!-- 🔽 Tabla de alumnos -->
+  <table class="table table-bordered">
+    <thead class="table-light">
+      <tr>
+        <th>Alumno</th>
+        <th>Curso</th>
+        <th>Atrasos Semanales</th>
+        <th>Atrasos Mensuales</th>
+        <th>Estado</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in alumnos_info %}
+      <tr>
+        <td>{{ a.alumno.nombre_completo }}</td>
+        <td>{{ a.curso }}</td>
+        <td>{{ a.atrasos }}</td>
+        <td>{{ a.mensual }}</td>
+        <td>
+          {% if a.estado == "verde" %}
+            <span class="badge bg-success">🟢 0 Atrasos</span>
+          {% elif a.estado == "amarillo" %}
+            <span class="badge bg-warning text-dark">🟡 1-2 Atrasos</span>
+          {% elif a.estado == "rojo" %}
+            <span class="badge bg-danger">🔴 3+ Atrasos</span>
+            {% if a.advertencia %}
+              <span class="text-danger ms-2 fw-bold">⚠ Incumplimiento</span>
+            {% endif %}
+          {% endif %}
+        </td>
+        <td>
+          {% if a.estado == "rojo" %}
+            <a href="{{ a.seguimiento_url }}" class="btn btn-sm btn-primary">📄 Ver Seguimiento</a>
+          {% else %}
+            <span class="text-muted">Sin seguimiento</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6">No hay alumnos con datos esta semana.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <a href="{% url 'dashboard_admin' %}" class="btn btn-secondary">⬅ Volver</a>
+</div>
+{% endblock %}
+

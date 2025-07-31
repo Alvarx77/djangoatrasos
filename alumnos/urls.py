@@ -16,12 +16,15 @@ urlpatterns = [
     path('alumnos/editar/<int:alumno_id>/', views.editar_alumno, name='editar_alumno'),
     path('alumnos/eliminar/<int:alumno_id>/', views.confirmar_eliminar_alumno, name='eliminar_alumno'),
     path('eliminar-base/', views.eliminar_base, name='eliminar_base'),
+    path('seguimiento/', views.seguimiento, name='seguimiento'),
+    path('seguimiento_individual/<int:alumno_id>/<int:semana>/<int:anio>/', views.seguimiento_individual, name='seguimiento_individual')
 
 
 
 
 
 
-    
+
+
 ]
 
